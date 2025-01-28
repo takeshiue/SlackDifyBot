@@ -9,6 +9,7 @@ services:
       - DIFY_API_KEY=${DIFY_API_KEY}
       - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - DIFY_API_URL=${DIFY_API_URL}  # 追加
     volumes:
       - ./logs:/app/logs
       - .:/app
@@ -27,7 +28,7 @@ services:
   dify-api:
     image: dify/dify-api:latest
     environment:
-      - API_URL=https://dify.uematsu.cn/v1
+      - API_URL=https://dify.uematsu.cn/v1  # 元のURLに戻す
     networks:
       - bot-network
     restart: unless-stopped

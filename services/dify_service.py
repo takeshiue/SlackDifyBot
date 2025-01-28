@@ -1,3 +1,4 @@
+import os
 import requests
 from typing import Optional
 from datetime import datetime
@@ -13,56 +14,56 @@ class DifyService:
         if not api_key:
             raise ValueError("Dify API keyが必要です")
         self.api_key = api_key
-        self.base_url = 'https://dify.uematsu.cn/v1'
+        self.base_url = os.environ.get('DIFY_API_URL', 'https://dify.uematsu.cn/v1')  # 環境変数から読み込み
+        logger.info(f"Dify API URL: {self.base_url}")  # URLを確認するためのログを追加
         self.headers = {
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json'
         }
-        self.timeout = 30  # タイムアウト時間（秒）
+        self.timeout = 30  # タイムアウト時間を短縮
 
     def get_response(self, query: str, user: str, conversation_id: Optional[str] = None) -> str:
         """
         Get response from Dify API with enhanced error handling and monitoring
-
-        Args:
-            query (str): User's query text
-            user (str): User identifier
-            conversation_id (str, optional): ID for conversation tracking
-
-        Returns:
-            str: Response from Dify API
-
-        Raises:
-            DifyAPIError: Base class for all Dify related errors
-            ValueError: If query is empty
         """
         if not query:
             logger.error("空のクエリを受信")
             raise ValueError("クエリが空です")
 
         data = {
+            'inputs': {},
             'query': query,
             'response_mode': 'blocking',
-            'user': user,
-            'conversation_id': conversation_id or '',
-            'inputs': {}
+            'user': user
         }
+
+        if conversation_id:
+            data['conversation_id'] = conversation_id
 
         start_time = datetime.now()
         try:
             logger.info(f"Dify APIリクエスト開始 - ユーザー: {user}")
+            logger.debug(f"リクエストURL: {self.base_url}")
+            logger.debug(f"リクエストヘッダー: {self.headers}")
+            logger.debug(f"リクエストデータ: {data}")
+
             response = requests.post(
                 self.base_url,
                 headers=self.headers,
                 json=data,
                 timeout=self.timeout
             )
+
+            logger.debug(f"APIレスポンス状態コード: {response.status_code}")
+            logger.debug(f"APIレスポンスヘッダー: {response.headers}")
+            logger.debug(f"APIレスポンス本文: {response.text}")
+
             response.raise_for_status()
+            response_data = response.json()
 
             response_time = (datetime.now() - start_time).total_seconds()
             logger.info(f"Dify API応答時間: {response_time:.2f}秒")
 
-            response_data = response.json()
             if 'answer' in response_data:
                 return response_data['answer']
             else:
@@ -75,6 +76,7 @@ class DifyService:
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Dify APIリクエストエラー: {str(e)}")
+            logger.debug(f"詳細なエラー情報: {e.__class__.__name__}, {e.args}")
             raise DifyConnectionError(e)
 
         except Exception as e:
@@ -83,5 +85,5 @@ class DifyService:
 
         finally:
             response_time = (datetime.now() - start_time).total_seconds()
-            if response_time > self.timeout * 0.8:  # タイムアウト閾値の80%を超えた場合
+            if response_time > self.timeout * 0.8:
                 logger.warning(f"応答時間が長い: {response_time:.2f}秒")
