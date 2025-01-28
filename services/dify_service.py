@@ -37,7 +37,7 @@ class DifyService:
             'query': query,
             'user': user,
             'response_mode': 'streaming',
-            'conversation_id': conversation_id if conversation_id else ''
+            'conversation_id': ''
         }
 
         start_time = datetime.now()
