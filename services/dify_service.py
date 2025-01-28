@@ -36,7 +36,7 @@ class DifyService:
             'inputs': {},
             'query': query,
             'user': user,
-            'response_mode': 'streaming',
+            'response_mode': 'blocking',
             'conversation_id': ''
         }
 
