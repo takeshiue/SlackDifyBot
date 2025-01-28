@@ -1,0 +1,10 @@
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.32.3",
+    "slack-bolt>=1.22.0",
+    "slack-sdk>=3.34.0",
+]
