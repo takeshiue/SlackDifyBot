@@ -10,21 +10,42 @@ from services.errors import DifyAPIError, DifyTimeoutError, DifyConnectionError,
 # Setup logging
 logger = setup_logger()
 
-def get_required_env_var(var_name: str) -> str:
-    """Get required environment variable or exit with error"""
+def validate_token_format(token: str, token_type: str) -> bool:
+    """トークンの形式を検証する"""
+    if token_type == "bot" and not token.startswith("xoxb-"):
+        logger.error(f"SLACK_BOT_TOKENの形式が正しくありません（'xoxb-'で始まる必要があります）")
+        return False
+    elif token_type == "app" and not token.startswith("xapp-"):
+        logger.error(f"SLACK_APP_TOKENの形式が正しくありません（'xapp-'で始まる必要があります）")
+        return False
+    return True
+
+def get_required_env_var(var_name: str, token_type: str = None) -> str:
+    """環境変数を取得し、必要に応じてトークンの形式を検証する"""
     value = os.environ.get(var_name)
     if not value:
         logger.error(f"環境変数 {var_name} が設定されていません")
         raise ValueError(f"環境変数 {var_name} が設定されていません")
+
+    if token_type and not validate_token_format(value, token_type):
+        raise ValueError(
+            f"{var_name}の形式が正しくありません。\n"
+            f"{'Bot User OAuth Token' if token_type == 'bot' else 'App-Level Token'}を"
+            f"Slack API設定画面から取得してください。"
+        )
     return value
 
 # Initialize required environment variables
 try:
-    SLACK_BOT_TOKEN = get_required_env_var("SLACK_BOT_TOKEN")
-    SLACK_APP_TOKEN = get_required_env_var("SLACK_APP_TOKEN")
+    SLACK_BOT_TOKEN = get_required_env_var("SLACK_BOT_TOKEN", "bot")
+    SLACK_APP_TOKEN = get_required_env_var("SLACK_APP_TOKEN", "app")
     DIFY_API_KEY = get_required_env_var("DIFY_API_KEY")
 except ValueError as e:
     logger.error(f"環境変数エラー: {str(e)}")
+    logger.error("Slackアプリの設定を確認してください:")
+    logger.error("1. SLACK_BOT_TOKEN: Bot User OAuth Token（api.slack.com/apps > OAuth & Permissions）")
+    logger.error("2. SLACK_APP_TOKEN: App-Level Token（api.slack.com/apps > Basic Information）")
+    logger.error("3. Socket Mode: 有効化（api.slack.com/apps > Socket Mode）")
     raise
 
 # Initialize services
@@ -154,22 +175,6 @@ def main():
     """Main application entry point"""
     logger.info("Slackボットアプリケーションを起動します")
     try:
-        # トークンのフォーマット検証を実行
-        logger.info("トークンのフォーマットを検証中...")
-
-        # SLACK_APP_TOKENの検証
-        if not SLACK_APP_TOKEN.startswith("xapp-"):
-            logger.error("SLACK_APP_TOKENの形式が正しくありません")
-            logger.error(f"現在の形式: {SLACK_APP_TOKEN[:5]}...")  # トークンの最初の5文字のみログ出力
-            raise ValueError("SLACK_APP_TOKENの形式が正しくありません。api.slack.com/appsのApp-Level Tokensから取得したトークンを使用してください。")
-        logger.info("SLACK_APP_TOKENのフォーマットは正常です")
-
-        # SLACK_BOT_TOKENの検証
-        if not SLACK_BOT_TOKEN.startswith("xoxb-"):
-            logger.error("SLACK_BOT_TOKENの形式が正しくありません")
-            raise ValueError("SLACK_BOT_TOKENは'xoxb-'で始まる必要があります")
-        logger.info("SLACK_BOT_TOKENのフォーマットは正常です")
-
         # Initialize and verify Slack connection
         bot_user_id = initialize_slack()
         logger.info("Slack接続の初期化が完了しました")
