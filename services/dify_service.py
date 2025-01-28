@@ -34,7 +34,7 @@ class DifyService:
         data = {
             'inputs': {'query': query},  # queryをinputs内に配置
             'user': user,
-            'response_mode': 'blocking',
+            'response_mode': 'streaming',
             'conversation_id': conversation_id if conversation_id else None
         }
 
