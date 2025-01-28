@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  slack-bot:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DIFY_API_KEY=${DIFY_API_KEY}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - bot-network
+    restart: unless-stopped
+    depends_on:
+      - dify-api
+
+  dify-api:
+    image: dify/dify-api:latest
+    environment:
+      - API_URL=https://dify.uematsu.cn/v1
+    networks:
+      - bot-network
+    restart: unless-stopped
+
+networks:
+  bot-network:
+    driver: bridge

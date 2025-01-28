@@ -11,7 +11,7 @@ class DifyService:
         if not api_key:
             raise ValueError("Dify API key is required")
         self.api_key = api_key
-        self.base_url = 'https://dify.uematsu.cn/V1'
+        self.base_url = 'https://dify.uematsu.cn/v1'  # URLを小文字に修正
         self.headers = {
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json'
