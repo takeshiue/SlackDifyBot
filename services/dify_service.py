@@ -36,12 +36,9 @@ class DifyService:
             'inputs': {},
             'query': query,
             'user': user,
-            'response_mode': 'streaming',
-            'conversation_id': conversation_id if conversation_id else None
+            'response_mode': 'blocking',
+            'conversation_id': conversation_id if conversation_id else ''
         }
-
-        # Noneの値を削除
-        data = {k: v for k, v in data.items() if v is not None}
 
         start_time = datetime.now()
         try:
