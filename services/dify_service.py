@@ -32,7 +32,8 @@ class DifyService:
 
         # APIリクエストデータの構築
         data = {
-            'inputs': {'query': query},  # queryをinputs内に配置
+            'inputs': {},
+            'query': query,
             'user': user,
             'response_mode': 'streaming',
             'conversation_id': conversation_id if conversation_id else None
