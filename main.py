@@ -1,12 +1,16 @@
 import os
 import time
 import requests
+from dotenv import load_dotenv
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from services.dify_service import DifyService
 from services.conversation_service import ConversationService
 from utils.logger import setup_logger
 from services.errors import DifyAPIError, DifyTimeoutError, DifyConnectionError, DifyResponseError
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Setup logging
 logger = setup_logger()

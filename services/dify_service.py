@@ -15,7 +15,7 @@ class DifyService:
         if not api_key:
             raise ValueError("Dify API keyが必要です")
         self.api_key = api_key
-        self.base_url = os.environ.get('DIFY_API_URL', 'https://dify.uematsu.cn/v1')
+        self.base_url = os.environ.get('DIFY_API_URL', '')
         logger.info(f"Dify API URL: {self.base_url}")
         self.headers = {
             'Authorization': f'Bearer {api_key}',
