@@ -160,7 +160,8 @@ def main():
         # SLACK_APP_TOKENの検証
         if not SLACK_APP_TOKEN.startswith("xapp-"):
             logger.error("SLACK_APP_TOKENの形式が正しくありません")
-            raise ValueError("SLACK_APP_TOKENは'xapp-'で始まる必要があります")
+            logger.error(f"現在の形式: {SLACK_APP_TOKEN[:5]}...")  # トークンの最初の5文字のみログ出力
+            raise ValueError("SLACK_APP_TOKENの形式が正しくありません。api.slack.com/appsのApp-Level Tokensから取得したトークンを使用してください。")
         logger.info("SLACK_APP_TOKENのフォーマットは正常です")
 
         # SLACK_BOT_TOKENの検証
@@ -175,13 +176,21 @@ def main():
 
         # Start Socket Mode handler
         logger.info("Socket Modeハンドラを開始します...")
-        handler = SocketModeHandler(app, SLACK_APP_TOKEN)
-        handler.start()
-        logger.info("Socket Modeハンドラが正常に開始されました")
+        try:
+            handler = SocketModeHandler(app, SLACK_APP_TOKEN)
+            handler.start()
+            logger.info("Socket Modeハンドラが正常に開始されました")
+        except Exception as e:
+            logger.error(f"Socket Mode起動エラー: {str(e)}")
+            logger.error("Socket Modeが有効になっているか確認してください（api.slack.com/apps > Socket Mode）")
+            raise
 
     except Exception as e:
         logger.error("Slackアプリの起動に失敗しました: %s", str(e))
-        logger.error("SLACK_APP_TOKENとSLACK_BOT_TOKENの設定を確認してください")
+        logger.error("設定を確認してください:")
+        logger.error("1. SLACK_APP_TOKEN: App-Level Tokens（api.slack.com/apps > Basic Information）")
+        logger.error("2. Socket Mode: 有効化（api.slack.com/apps > Socket Mode）")
+        logger.error("3. SLACK_BOT_TOKEN: Bot User OAuth Token（api.slack.com/apps > OAuth & Permissions）")
         raise
 
 if __name__ == "__main__":
