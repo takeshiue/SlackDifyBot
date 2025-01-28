@@ -14,7 +14,7 @@ class DifyService:
         if not api_key:
             raise ValueError("Dify API keyが必要です")
         self.api_key = api_key
-        self.base_url = os.environ.get('DIFY_API_URL', 'http://dify.uematsu.cn/v1')
+        self.base_url = os.environ.get('DIFY_API_URL', 'https://dify.uematsu.cn/v1')
         logger.info(f"Dify API URL: {self.base_url}")
         self.headers = {
             'Authorization': f'Bearer {api_key}',
@@ -32,14 +32,15 @@ class DifyService:
 
         # APIリクエストデータの構築
         data = {
-            'inputs': {},
+            'inputs': {},  # 必須パラメータ
             'query': query,
             'user': user,
             'response_mode': 'blocking',
+            'conversation_id': conversation_id if conversation_id else None
         }
 
-        if conversation_id:
-            data['conversation_id'] = conversation_id
+        # Noneの値を削除
+        data = {k: v for k, v in data.items() if v is not None}
 
         start_time = datetime.now()
         try:
