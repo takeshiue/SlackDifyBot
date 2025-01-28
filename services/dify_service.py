@@ -52,7 +52,7 @@ class DifyService:
             response = requests.post(
                 f"{self.base_url}/chat-messages",
                 headers=self.headers,
-                json=data,
+                data=json.dumps(data),
                 timeout=self.timeout
             )
 
