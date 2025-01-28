@@ -112,13 +112,14 @@ def handle_app_mention(event, say):
         bot_user_id = app.client.auth_test()["user_id"]
         query = event['text'].replace(f"<@{bot_user_id}>", "").strip()
         user = event['user']
+        conversation_id = event.get('thread_ts') or event.get('ts')
 
         # 応答時間の計測開始
         start_time = time.time()
 
         try:
             # Dify APIからの応答を取得
-            response = dify_service.get_response(query, user)
+            response = dify_service.get_response(query, user, conversation_id)
 
             # 応答時間の計算（秒単位）
             response_time = time.time() - start_time
@@ -126,36 +127,37 @@ def handle_app_mention(event, say):
             # 会話を保存
             conversation_service.save_conversation(user, query, response, response_time)
 
-            say(response)
+            # スレッド内で応答
+            say(text=response, thread_ts=conversation_id)
 
         except DifyTimeoutError:
             error_message = "申し訳ありません。応答がタイムアウトしました。しばらく待ってから再度お試しください。"
             logger.error("Dify APIタイムアウト")
-            say(error_message)
+            say(text=error_message, thread_ts=conversation_id)
             conversation_service.save_conversation(user, query, error_message, time.time() - start_time, error_occurred=True)
 
         except DifyConnectionError as e:
             error_message = "申し訳ありません。APIサーバーとの接続に問題が発生しました。"
             logger.error(f"Dify API接続エラー: {str(e.original_error)}")
-            say(error_message)
+            say(text=error_message, thread_ts=conversation_id)
             conversation_service.save_conversation(user, query, error_message, time.time() - start_time, error_occurred=True)
 
         except DifyResponseError as e:
             error_message = "申し訳ありません。応答の処理中にエラーが発生しました。"
             logger.error(f"Dify API応答エラー: {str(e)}")
-            say(error_message)
+            say(text=error_message, thread_ts=conversation_id)
             conversation_service.save_conversation(user, query, error_message, time.time() - start_time, error_occurred=True)
 
         except DifyAPIError as e:
             error_message = "申し訳ありません。予期しないエラーが発生しました。"
             logger.error(f"Dify APIエラー: {str(e)}")
-            say(error_message)
+            say(text=error_message, thread_ts=conversation_id)
             conversation_service.save_conversation(user, query, error_message, time.time() - start_time, error_occurred=True)
 
     except Exception as e:
         error_message = "申し訳ありません。システムエラーが発生しました。"
         logger.error(f"システムエラー: {str(e)}")
-        say(error_message)
+        say(text=error_message, thread_ts=conversation_id if 'conversation_id' in locals() else None)
 
 def initialize_slack():
     """Initialize Slack connection and verify bot credentials"""

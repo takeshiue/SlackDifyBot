@@ -14,13 +14,13 @@ class DifyService:
         if not api_key:
             raise ValueError("Dify API keyが必要です")
         self.api_key = api_key
-        self.base_url = os.environ.get('DIFY_API_URL', 'https://dify.uematsu.cn/v1')  # 環境変数から読み込み
-        logger.info(f"Dify API URL: {self.base_url}")  # URLを確認するためのログを追加
+        self.base_url = os.environ.get('DIFY_API_URL', 'http://dify.uematsu.cn/v1')
+        logger.info(f"Dify API URL: {self.base_url}")
         self.headers = {
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json'
         }
-        self.timeout = 30  # タイムアウト時間を短縮
+        self.timeout = 30
 
     def get_response(self, query: str, user: str, conversation_id: Optional[str] = None) -> str:
         """
@@ -30,11 +30,12 @@ class DifyService:
             logger.error("空のクエリを受信")
             raise ValueError("クエリが空です")
 
+        # APIリクエストデータの構築
         data = {
             'inputs': {},
             'query': query,
+            'user': user,
             'response_mode': 'blocking',
-            'user': user
         }
 
         if conversation_id:
@@ -43,23 +44,22 @@ class DifyService:
         start_time = datetime.now()
         try:
             logger.info(f"Dify APIリクエスト開始 - ユーザー: {user}")
-            logger.debug(f"リクエストURL: {self.base_url}")
+            logger.debug(f"リクエストURL: {self.base_url}/message/chat")
             logger.debug(f"リクエストヘッダー: {self.headers}")
             logger.debug(f"リクエストデータ: {data}")
 
+            # Message Chat APIエンドポイントにリクエスト
             response = requests.post(
-                self.base_url,
+                f"{self.base_url}/message/chat",
                 headers=self.headers,
                 json=data,
                 timeout=self.timeout
             )
 
             logger.debug(f"APIレスポンス状態コード: {response.status_code}")
-            logger.debug(f"APIレスポンスヘッダー: {response.headers}")
-            logger.debug(f"APIレスポンス本文: {response.text}")
-
             response.raise_for_status()
             response_data = response.json()
+            logger.debug(f"APIレスポンス: {response_data}")
 
             response_time = (datetime.now() - start_time).total_seconds()
             logger.info(f"Dify API応答時間: {response_time:.2f}秒")
@@ -67,8 +67,8 @@ class DifyService:
             if 'answer' in response_data:
                 return response_data['answer']
             else:
-                logger.warning(f"予期しない応答形式: {response_data}")
-                raise DifyResponseError(response_data)
+                logger.warning("空の応答を受信")
+                raise DifyResponseError({"error": "空の応答"})
 
         except requests.exceptions.Timeout:
             logger.error("Dify APIリクエストがタイムアウト")
@@ -87,3 +87,18 @@ class DifyService:
             response_time = (datetime.now() - start_time).total_seconds()
             if response_time > self.timeout * 0.8:
                 logger.warning(f"応答時間が長い: {response_time:.2f}秒")
+
+    def get_conversation_history(self, user: str, conversation_id: str) -> list:
+        """会話履歴を取得"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/messages",
+                params={'conversation_id': conversation_id},
+                headers=self.headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json().get('data', [])
+        except Exception as e:
+            logger.error(f"会話履歴の取得に失敗: {str(e)}")
+            raise DifyAPIError("会話履歴の取得に失敗しました", e)
