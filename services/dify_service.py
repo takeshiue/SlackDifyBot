@@ -15,7 +15,10 @@ class DifyService:
         if not api_key:
             raise ValueError("Dify API keyが必要です")
         self.api_key = api_key
-        self.base_url = os.environ.get('DIFY_API_URL', '')
+        self.base_url = os.environ.get('DIFY_API_URL')
+        if not self.base_url:
+            logger.error("DIFY_API_URLが設定されていません")
+            raise ValueError("DIFY_API_URLが環境変数に設定されていません")
         logger.info(f"Dify API URL: {self.base_url}")
         self.headers = {
             'Authorization': f'Bearer {api_key}',
@@ -37,16 +40,15 @@ class DifyService:
             'query': query,
             'user': user,
             'response_mode': 'blocking',
-            'conversation_id': ''
+            'conversation_id': conversation_id if conversation_id else ''
         }
 
         start_time = datetime.now()
         try:
             logger.info(f"Dify APIリクエスト開始 - ユーザー: {user}")
-            logger.info(f"API URL: {self.base_url}/chat-messages")
-            logger.info(f"API Key: {self.api_key}")
-            logger.info(f"Request Headers: {self.headers}")
-            logger.info(f"Request Data: {json.dumps(data, ensure_ascii=False, indent=2)}")
+            logger.debug(f"API URL: {self.base_url}/chat-messages")
+            logger.debug(f"Request Headers: {self.headers}")
+            logger.debug(f"Request Data: {json.dumps(data, ensure_ascii=False, indent=2)}")
 
             # Chat Message APIエンドポイントにリクエスト
             response = requests.post(
