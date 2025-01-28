@@ -44,13 +44,12 @@ class DifyService:
         start_time = datetime.now()
         try:
             logger.info(f"Dify APIリクエスト開始 - ユーザー: {user}")
-            logger.debug(f"リクエストURL: {self.base_url}/message/chat")
-            logger.debug(f"リクエストヘッダー: {self.headers}")
+            logger.debug(f"リクエストURL: {self.base_url}/chat-messages")
             logger.debug(f"リクエストデータ: {data}")
 
-            # Message Chat APIエンドポイントにリクエスト
+            # Chat Message APIエンドポイントにリクエスト
             response = requests.post(
-                f"{self.base_url}/message/chat",
+                f"{self.base_url}/chat-messages",
                 headers=self.headers,
                 json=data,
                 timeout=self.timeout
@@ -61,14 +60,13 @@ class DifyService:
             response_data = response.json()
             logger.debug(f"APIレスポンス: {response_data}")
 
-            response_time = (datetime.now() - start_time).total_seconds()
-            logger.info(f"Dify API応答時間: {response_time:.2f}秒")
-
             if 'answer' in response_data:
                 return response_data['answer']
+            elif 'message' in response_data:
+                return response_data['message']
             else:
-                logger.warning("空の応答を受信")
-                raise DifyResponseError({"error": "空の応答"})
+                logger.warning(f"予期しない応答形式: {response_data}")
+                raise DifyResponseError(response_data)
 
         except requests.exceptions.Timeout:
             logger.error("Dify APIリクエストがタイムアウト")
