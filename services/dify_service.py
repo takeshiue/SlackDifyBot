@@ -43,8 +43,10 @@ class DifyService:
         start_time = datetime.now()
         try:
             logger.info(f"Dify APIリクエスト開始 - ユーザー: {user}")
-            logger.debug(f"リクエストURL: {self.base_url}/chat-messages")
-            logger.debug(f"リクエストデータ: {data}")
+            logger.info(f"API URL: {self.base_url}/chat-messages")
+            logger.info(f"API Key: {self.api_key}")
+            logger.info(f"Request Headers: {self.headers}")
+            logger.info(f"Request Data: {json.dumps(data, ensure_ascii=False, indent=2)}")
 
             # Chat Message APIエンドポイントにリクエスト
             response = requests.post(
